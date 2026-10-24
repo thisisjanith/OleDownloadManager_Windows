@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AssemblyName>OleDownloadManager</AssemblyName>
+    <RootNamespace>OleDownloadManager.App</RootNamespace>
+    <ApplicationIcon>Assets\app.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AssemblyTitle>OleDownloadManager</AssemblyTitle>
+    <Description>Download manager for Windows</Description>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- WFO0003: this is a WPF app; per-monitor DPI awareness belongs in app.manifest. -->
+    <NoWarn>$(NoWarn);WFO0003</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OleDownloadManager.Core\OleDownloadManager.Core.csproj" />
+    <ProjectReference Include="..\OleDownloadManager.Engine\OleDownloadManager.Engine.csproj" />
+    <ProjectReference Include="..\OleDownloadManager.Infrastructure\OleDownloadManager.Infrastructure.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Assets\app.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- WinForms is referenced only for the notification-area icon; keep WPF types unambiguous. -->
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="OleDownloadManager.UITests" />
+  </ItemGroup>
+</Project>

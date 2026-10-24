@@ -1,0 +1,221 @@
+<Window x:Class="OleDownloadManager.App.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:OleDownloadManager.App.ViewModels"
+        Title="Settings" Width="820" Height="600" MinWidth="680" MinHeight="460"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False"
+        Style="{StaticResource AppWindowStyle}" AutomationProperties.AutomationId="SettingsWindow">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <TabControl>
+            <TabItem Header="General">
+                <StackPanel>
+                    <TextBlock Text="General" Style="{StaticResource SectionHeader}" FontSize="18" />
+                    <TextBlock Text="Default download folder" Style="{StaticResource FieldLabel}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding DefaultDownloadDirectory, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Default download folder" />
+                        <Button Grid.Column="1" Content="Browse…" Command="{Binding BrowseDefaultFolderCommand}" Margin="8,0,0,0" />
+                    </Grid>
+                    <TextBlock Text="Leave empty to use your Windows Downloads folder. Any folder works, including other drives and external SSDs."
+                               Style="{StaticResource SecondaryText}" TextWrapping="Wrap" Margin="0,4,0,0" />
+
+                    <TextBlock Text="Appearance" Style="{StaticResource FieldLabel}" />
+                    <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.ThemeChoices}" SelectedItem="{Binding Theme}" Width="240" HorizontalAlignment="Left"
+                              AutomationProperties.Name="Appearance" />
+
+                    <TextBlock Text="Windows integration" Style="{StaticResource SectionHeader}" />
+                    <CheckBox Content="Start OleDownloadManager when I sign in to Windows" IsChecked="{Binding LaunchAtLogin}" />
+                    <TextBlock Text="Adds a shortcut to your Startup folder. The app starts in the notification area. You can also turn it off in Windows Settings › Apps › Startup."
+                               Style="{StaticResource SecondaryText}" TextWrapping="Wrap" Margin="26,0,0,6" />
+                    <CheckBox Content="Show an icon in the notification area" IsChecked="{Binding ShowTrayIcon}" />
+                    <CheckBox Content="Keep running in the notification area when the window is closed" IsChecked="{Binding CloseToTray}" IsEnabled="{Binding ShowTrayIcon}" />
+                    <TextBlock Text="When enabled, closing the window keeps downloads running. Reopen the app from its notification-area icon, or choose Exit there to quit."
+                               Style="{StaticResource SecondaryText}" TextWrapping="Wrap" Margin="26,0,0,6" />
+                    <CheckBox Content="Ask before removing downloads from the list" IsChecked="{Binding ConfirmBeforeRemove}" />
+                    <CheckBox Content="Watch the clipboard for download links (opt-in)" IsChecked="{Binding ClipboardMonitoring}" />
+                    <TextBlock Text="When you copy a link to a file type from the Categories list, the Add Download dialog opens. Nothing is downloaded without your confirmation."
+                               Style="{StaticResource SecondaryText}" TextWrapping="Wrap" Margin="26,0,0,6" />
+
+                    <TextBlock Text="Notifications" Style="{StaticResource SectionHeader}" />
+                    <CheckBox Content="Show Windows notifications" IsChecked="{Binding NotificationsEnabled}" />
+                    <StackPanel Margin="26,0,0,0" IsEnabled="{Binding NotificationsEnabled}">
+                        <CheckBox Content="When a download completes" IsChecked="{Binding NotifyOnComplete}" />
+                        <CheckBox Content="When a download fails" IsChecked="{Binding NotifyOnFailure}" />
+                        <CheckBox Content="When a scheduled download or queue starts" IsChecked="{Binding NotifyOnQueueStart}" />
+                        <TextBlock Text="Notifications are delivered through the notification-area icon and follow your Windows notification and Focus settings."
+                                   Style="{StaticResource SecondaryText}" TextWrapping="Wrap" />
+                    </StackPanel>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Connections">
+                <StackPanel>
+                    <TextBlock Text="Connections and speed" Style="{StaticResource SectionHeader}" FontSize="18" />
+                    <TextBlock Text="Maximum simultaneous downloads" Style="{StaticResource FieldLabel}" />
+                    <ComboBox ItemsSource="{Binding ActiveChoices}" SelectedItem="{Binding MaxActiveDownloads}" Width="120" HorizontalAlignment="Left" />
+                    <TextBlock Text="Connections per download (default for new downloads)" Style="{StaticResource FieldLabel}" />
+                    <ComboBox ItemsSource="{Binding ConnectionChoices}" SelectedItem="{Binding DefaultConnections}" Width="120" HorizontalAlignment="Left" />
+                    <TextBlock Text="Multiple connections only help when the server supports byte ranges and does not limit per-connection speed. Actual speed depends on the server and your connection."
+                               Style="{StaticResource SecondaryText}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                    <TextBlock Text="Global speed limit (all downloads together)" Style="{StaticResource FieldLabel}" />
+                    <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.SpeedChoices}" SelectedItem="{Binding GlobalSpeedLimit}" Width="200" HorizontalAlignment="Left" />
+                    <TextBlock Text="Default speed limit per download" Style="{StaticResource FieldLabel}" />
+                    <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.SpeedChoices}" SelectedItem="{Binding PerDownloadSpeedLimit}" Width="200" HorizontalAlignment="Left" />
+                    <TextBlock Text="Automatic retries for temporary errors" Style="{StaticResource FieldLabel}" />
+                    <ComboBox ItemsSource="{Binding RetryChoices}" SelectedItem="{Binding MaxRetries}" Width="120" HorizontalAlignment="Left" />
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Queue &amp; Schedule">
+                <StackPanel>
+                    <TextBlock Text="Queue and scheduling" Style="{StaticResource SectionHeader}" FontSize="18" />
+                    <CheckBox Content="Resume interrupted downloads automatically when the app starts" IsChecked="{Binding AutoResumeOnStartup}" />
+                    <CheckBox Content="Start scheduled downloads that were missed while the app was closed" IsChecked="{Binding RunMissedSchedules}" />
+                    <TextBlock Text="If this is off, missed scheduled downloads are paused and you are notified."
+                               Style="{StaticResource SecondaryText}" TextWrapping="Wrap" Margin="26,0,0,6" />
+                    <TextBlock Text="Start the queue every day at (HH:MM, empty = off)" Style="{StaticResource FieldLabel}" />
+                    <TextBox Text="{Binding QueueStartText, UpdateSourceTrigger=PropertyChanged}" Width="120" HorizontalAlignment="Left" AutomationProperties.Name="Daily queue start time" />
+                    <TextBlock Text="Pause the queue every day at (HH:MM, empty = off)" Style="{StaticResource FieldLabel}" />
+                    <TextBox Text="{Binding QueueStopText, UpdateSourceTrigger=PropertyChanged}" Width="120" HorizontalAlignment="Left" AutomationProperties.Name="Daily queue stop time" />
+                    <Border Style="{StaticResource NoticeBorder}" Margin="0,12,0,0">
+                        <TextBlock TextWrapping="Wrap" Text="Schedules only run while OleDownloadManager is running and the computer is awake. Windows sleep or hibernation pauses network activity; the app does not wake the computer." />
+                    </Border>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Files &amp; Categories">
+                <StackPanel>
+                    <TextBlock Text="Files and categories" Style="{StaticResource SectionHeader}" FontSize="18" />
+                    <TextBlock Text="When a file with the same name exists" Style="{StaticResource FieldLabel}" />
+                    <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.ConflictChoices}" SelectedItem="{Binding DefaultConflictPolicy}" Width="240" HorizontalAlignment="Left" />
+                    <TextBlock Text="Existing files are never overwritten unless you choose Replace in the Add Download dialog." Style="{StaticResource SecondaryText}" Margin="0,4,0,0" />
+                    <CheckBox Content="Compute a SHA-256 checksum for every completed download" IsChecked="{Binding ComputeSha256}" Margin="0,12,0,0" />
+                    <CheckBox Content="Organize new downloads into category folders" IsChecked="{Binding AutoOrganize}" Margin="0,4,0,0" />
+                    <TextBlock Text="Only affects the suggested folder for new downloads. Files are never moved after you choose a destination."
+                               Style="{StaticResource SecondaryText}" TextWrapping="Wrap" Margin="26,0,0,6" />
+                    <TextBlock Text="Extensions and folders per category (empty folder = default folder\Category)" Style="{StaticResource FieldLabel}" />
+                    <ItemsControl ItemsSource="{Binding CategoryRows}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:CategoryRowViewModel}">
+                                <Grid Margin="0,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="8" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                                    <TextBox Grid.Column="1" Text="{Binding Extensions, UpdateSourceTrigger=PropertyChanged}" ToolTip="Extensions separated by spaces" />
+                                    <TextBox Grid.Column="3" Text="{Binding Folder, UpdateSourceTrigger=PropertyChanged}" ToolTip="Optional folder for this category" />
+                                    <Button Grid.Column="4" Content="…" MinWidth="32" Margin="4,0,0,0" ToolTip="Choose folder"
+                                            Command="{Binding DataContext.BrowseCategoryFolderCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}" CommandParameter="{Binding}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Browser">
+                <StackPanel>
+                    <TextBlock Text="Browser integration" Style="{StaticResource SectionHeader}" FontSize="18" />
+                    <TextBlock TextWrapping="Wrap" Text="The Chrome/Edge and Firefox extensions send links you choose to OleDownloadManager through the browser's Native Messaging channel. They never read your browsing history or cookies." />
+                    <TextBlock Text="Native messaging host" Style="{StaticResource FieldLabel}" />
+                    <ItemsControl ItemsSource="{Binding BrowserStatus}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" Margin="0,3">
+                                    <TextBlock Text="{Binding Browser}" Width="100" />
+                                    <TextBlock Text="{Binding Status}" Foreground="{DynamicResource TextSecondaryBrush}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Content="Register for this user" Command="{Binding RegisterBrowserCommand}" Margin="0,0,8,0" />
+                        <Button Content="Remove registration" Command="{Binding UnregisterBrowserCommand}" Margin="0,0,8,0" />
+                        <Button Content="Open extension folder" Command="{Binding OpenExtensionFolderCommand}" />
+                    </StackPanel>
+                    <TextBlock Text="The installer registers the host automatically. To install the extension: open chrome://extensions or edge://extensions, enable Developer mode, choose Load unpacked, and select the chrome folder. See docs\BROWSER-INTEGRATION.md for Firefox."
+                               Style="{StaticResource SecondaryText}" TextWrapping="Wrap" Margin="0,8,0,0" />
+                    <CheckBox Content="Show the Add Download dialog for links sent from the browser" IsChecked="{Binding ShowDialogForBrowserDownloads}" Margin="0,14,0,0" />
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Media">
+                <StackPanel>
+                    <TextBlock Text="Media and playlists (optional)" Style="{StaticResource SectionHeader}" FontSize="18" />
+                    <Border Style="{StaticResource NoticeBorder}">
+                        <TextBlock TextWrapping="Wrap" Text="{x:Static vm:MediaViewModel.RightsNotice}" />
+                    </Border>
+                    <TextBlock TextWrapping="Wrap" Margin="0,10,0,0"
+                               Text="Media pages and playlists are handled by yt-dlp, a separate open-source tool you install yourself (for example: winget install yt-dlp.yt-dlp). Merging the best video and audio streams also needs ffmpeg." />
+                    <TextBlock Text="yt-dlp location (empty = search PATH)" Style="{StaticResource FieldLabel}" />
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding MediaToolPath, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Grid.Column="1" Content="Browse…" Command="{Binding BrowseMediaToolCommand}" Margin="8,0,0,0" />
+                        <Button Grid.Column="2" Content="Check" Command="{Binding CheckMediaToolCommand}" Margin="8,0,0,0" />
+                    </Grid>
+                    <Button Content="Update yt-dlp" Command="{Binding UpdateMediaToolCommand}" HorizontalAlignment="Left" Margin="0,8,0,0"
+                            ToolTip="Sites change often; if downloads fail with errors such as HTTP 403, updating yt-dlp usually fixes them." />
+                    <TextBlock Text="{Binding MediaStatus}" Style="{StaticResource SecondaryText}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                    <TextBlock Text="Default format" Style="{StaticResource FieldLabel}" />
+                    <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.MediaFormatChoices}" SelectedItem="{Binding MediaDefaultFormat}" Width="340" HorizontalAlignment="Left" />
+
+                    <TextBlock Text="Sign-in for media sites (optional)" Style="{StaticResource SectionHeader}" />
+                    <TextBlock TextWrapping="Wrap"
+                               Text="Some sites, including YouTube, may ask to confirm you are not a bot. yt-dlp can then use the sign-in from one of your browsers, or a cookies.txt file you export. yt-dlp reads it only for downloads you start from the Media dialog; OleDownloadManager never reads or stores it." />
+                    <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.CookieSourceChoices}" SelectedItem="{Binding CookieSource}" Width="340" HorizontalAlignment="Left" Margin="0,8,0,0"
+                              AutomationProperties.Name="Sign-in for media sites" />
+                    <Grid Margin="0,8,0,0" Visibility="{Binding UsesCookieFile, Converter={StaticResource BoolToVisibility}}">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox Text="{Binding CookieFile, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.Name="Cookies file" />
+                        <Button Grid.Column="1" Content="Browse…" Command="{Binding BrowseCookieFileCommand}" Margin="8,0,0,0" />
+                    </Grid>
+                    <TextBlock Style="{StaticResource SecondaryText}" TextWrapping="Wrap" Margin="0,6,0,0"
+                               Text="Chrome and Edge may lock or encrypt their sign-in data while running; if that fails, close the browser, use Firefox, or export a cookies.txt file. Note that yt-dlp may update a cookies.txt file it is given." />
+                </StackPanel>
+            </TabItem>
+
+            <TabItem Header="Advanced">
+                <StackPanel>
+                    <TextBlock Text="Storage and diagnostics" Style="{StaticResource SectionHeader}" FontSize="18" />
+                    <TextBlock Text="Application data (history database and settings)" Style="{StaticResource FieldLabel}" />
+                    <TextBox Text="{Binding DataDirectory, Mode=OneWay}" IsReadOnly="True" />
+                    <TextBlock Text="Diagnostic logs (URLs and credentials are redacted)" Style="{StaticResource FieldLabel}" />
+                    <TextBox Text="{Binding LogDirectory, Mode=OneWay}" IsReadOnly="True" />
+                    <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                        <Button Content="Open data folder" Command="{Binding OpenDataFolderCommand}" Margin="0,0,8,0" />
+                        <Button Content="Open logs" Command="{Binding OpenLogsCommand}" />
+                    </StackPanel>
+                    <TextBlock Text="Partial downloads are stored in a hidden .oledm-partial folder inside each destination folder, so large downloads do not fill your system drive."
+                               Style="{StaticResource SecondaryText}" TextWrapping="Wrap" Margin="0,12,0,0" />
+                </StackPanel>
+            </TabItem>
+        </TabControl>
+
+        <DockPanel Grid.Row="1" Margin="0,14,0,0">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="Cancel" IsCancel="True" Margin="0,0,8,0" />
+                <Button Content="Save" Command="{Binding SaveCommand}" Style="{StaticResource AccentButton}" IsDefault="True" AutomationProperties.AutomationId="SaveSettingsButton" />
+            </StackPanel>
+            <TextBlock Text="{Binding Error}" Foreground="{DynamicResource ErrorBrush}" VerticalAlignment="Center" TextWrapping="Wrap" />
+        </DockPanel>
+    </Grid>
+</Window>

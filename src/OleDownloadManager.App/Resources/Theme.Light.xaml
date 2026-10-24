@@ -1,0 +1,48 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Color x:Key="AccentColor">#FF0067C0</Color>
+
+    <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#FFF3F3F3" />
+    <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="SidebarBrush" Color="#FFEDEDED" />
+    <SolidColorBrush x:Key="ToolbarBrush" Color="#FFF9F9F9" />
+    <SolidColorBrush x:Key="DividerBrush" Color="#FFE1E1E1" />
+
+    <SolidColorBrush x:Key="ControlBackgroundBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="ControlHoverBrush" Color="#FFF5F5F5" />
+    <SolidColorBrush x:Key="ControlPressedBrush" Color="#FFEBEBEB" />
+    <SolidColorBrush x:Key="ControlBorderBrush" Color="#FFD0D0D0" />
+    <SolidColorBrush x:Key="ControlDisabledBrush" Color="#FFF0F0F0" />
+
+    <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FF1B1B1B" />
+    <SolidColorBrush x:Key="TextSecondaryBrush" Color="#FF5E5E5E" />
+    <SolidColorBrush x:Key="TextDisabledBrush" Color="#FF9E9E9E" />
+
+    <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}" />
+    <SolidColorBrush x:Key="AccentHoverBrush" Color="#FF1975C5" />
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="#FF005BA8" />
+    <SolidColorBrush x:Key="AccentForegroundBrush" Color="#FFFFFFFF" />
+
+    <SolidColorBrush x:Key="SelectionBrush" Color="#FFDCEAF8" />
+    <SolidColorBrush x:Key="SelectionInactiveBrush" Color="#FFE6E6E6" />
+    <SolidColorBrush x:Key="HoverBrush" Color="#FFF0F0F0" />
+    <SolidColorBrush x:Key="PopupBackgroundBrush" Color="#FFFCFCFC" />
+    <SolidColorBrush x:Key="ProgressTrackBrush" Color="#FFE3E3E3" />
+    <SolidColorBrush x:Key="ScrollThumbBrush" Color="#FFC2C2C2" />
+    <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="#FF8A8A8A" />
+
+    <SolidColorBrush x:Key="SuccessBrush" Color="#FF0F7B0F" />
+    <SolidColorBrush x:Key="WarningBrush" Color="#FF9D5D00" />
+    <SolidColorBrush x:Key="ErrorBrush" Color="#FFC42B1C" />
+    <SolidColorBrush x:Key="InfoBrush" Color="#FF0067C0" />
+    <SolidColorBrush x:Key="NoticeBackgroundBrush" Color="#FFFFF4CE" />
+    <SolidColorBrush x:Key="ErrorBackgroundBrush" Color="#FFFDE7E9" />
+
+    <SolidColorBrush x:Key="CategoryApplicationsBrush" Color="#FF6E56CF" />
+    <SolidColorBrush x:Key="CategoryDocumentsBrush" Color="#FF2F6FDB" />
+    <SolidColorBrush x:Key="CategoryArchivesBrush" Color="#FFB4690E" />
+    <SolidColorBrush x:Key="CategoryVideoBrush" Color="#FFD13438" />
+    <SolidColorBrush x:Key="CategoryAudioBrush" Color="#FF0E8A7E" />
+    <SolidColorBrush x:Key="CategoryImagesBrush" Color="#FFC239B3" />
+    <SolidColorBrush x:Key="CategoryOtherBrush" Color="#FF6B6B6B" />
+</ResourceDictionary>

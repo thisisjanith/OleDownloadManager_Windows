@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RootNamespace>OleDownloadManager.Infrastructure</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\OleDownloadManager.Core\OleDownloadManager.Core.csproj" />
+    <ProjectReference Include="..\OleDownloadManager.Engine\OleDownloadManager.Engine.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="OleDownloadManager.UnitTests" />
+    <InternalsVisibleTo Include="OleDownloadManager.IntegrationTests" />
+  </ItemGroup>
+</Project>

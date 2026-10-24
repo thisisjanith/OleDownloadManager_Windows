@@ -1,0 +1,75 @@
+:root {
+  color-scheme: light dark;
+  --bg: #ffffff;
+  --fg: #1b1b1b;
+  --muted: #5e5e5e;
+  --border: #d0d0d0;
+  --accent: #0067c0;
+  --accent-fg: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #202020;
+    --fg: #f2f2f2;
+    --muted: #b8b8b8;
+    --border: #4a4a4a;
+    --accent: #4cc2ff;
+    --accent-fg: #000000;
+  }
+}
+
+body {
+  width: 320px;
+  margin: 0;
+  padding: 14px 16px;
+  font: 13px "Segoe UI Variable Text", "Segoe UI", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+header { display: flex; align-items: center; gap: 8px; }
+h1 { font-size: 15px; font-weight: 600; margin: 0; }
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.dot.connected { background: #0f7b0f; }
+.dot.app-not-running { background: #9d5d00; }
+.dot.host-missing { background: #c42b1c; }
+
+.row { display: flex; align-items: center; gap: 8px; margin: 8px 0 6px; }
+
+textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: 12px "Cascadia Mono", Consolas, monospace;
+  background: transparent;
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px;
+  resize: vertical;
+}
+
+.hint { color: var(--muted); font-size: 12px; }
+
+footer { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+
+button {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 16px;
+  font: inherit;
+  cursor: pointer;
+}

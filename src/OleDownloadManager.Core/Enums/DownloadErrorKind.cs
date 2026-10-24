@@ -1,0 +1,31 @@
+namespace OleDownloadManager.Core.Enums;
+
+public enum DownloadErrorKind
+{
+    Unknown = 0,
+    InvalidUrl,
+    DnsFailure,
+    ConnectionFailed,
+    ConnectionTimeout,
+    ConnectionReset,
+    NetworkUnavailable,
+    TlsFailure,
+    Unauthorized,
+    Forbidden,
+    NotFound,
+    RequestTimeout,
+    TooManyRequests,
+    ServerError,
+    HttpError,
+    InvalidRangeResponse,
+    SourceChanged,
+    IncompleteResponse,
+    DiskFull,
+    AccessDenied,
+    DestinationUnavailable,
+    PathTooLong,
+    VerificationFailed,
+    ChecksumMismatch,
+    PartialDataMissing,
+    MediaToolFailed,
+}

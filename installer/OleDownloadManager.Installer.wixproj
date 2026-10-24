@@ -1,0 +1,24 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+  <!--
+    WiX Toolset 5 (MS-RL licensed, restored from NuGet; no machine-wide install or EULA acceptance needed).
+    Build through scripts/package.ps1, which publishes the app first and passes PublishDir.
+  -->
+  <PropertyGroup>
+    <ProductVersion Condition="'$(ProductVersion)' == ''">1.0.0</ProductVersion>
+    <InstallerPlatform Condition="'$(InstallerPlatform)' == ''">x64</InstallerPlatform>
+    <OutputName>OleDownloadManager-$(ProductVersion)-$(InstallerPlatform)</OutputName>
+    <DefineConstants>PublishDir=$(PublishDir);ProductVersion=$(ProductVersion)</DefineConstants>
+    <!--
+      Per-user packages install into the user profile, where Windows Installer's ICE38/ICE64/ICE91 rules
+      expect HKCU key paths for every component. Harvested files use file key paths; uninstall still
+      removes them because each file is its own component.
+      ICE60: versioned runtime files have no language; ICE61: same-version upgrades are allowed on purpose.
+    -->
+    <SuppressIces>ICE38;ICE60;ICE61;ICE64;ICE91</SuppressIces>
+    <SuppressPdbOutput>true</SuppressPdbOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="WixToolset.UI.wixext" />
+    <PackageReference Include="WixToolset.Util.wixext" />
+  </ItemGroup>
+</Project>

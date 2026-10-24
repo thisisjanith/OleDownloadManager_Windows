@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+    <RootNamespace>OleDownloadManager.IntegrationTests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\OleDownloadManager.Core\OleDownloadManager.Core.csproj" />
+    <ProjectReference Include="..\..\src\OleDownloadManager.Engine\OleDownloadManager.Engine.csproj" />
+    <ProjectReference Include="..\..\src\OleDownloadManager.Infrastructure\OleDownloadManager.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\OleDownloadManager.BrowserHost\OleDownloadManager.BrowserHost.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  OleDownloadManager per-user MSI.
+  - Installs to %LOCALAPPDATA%\Programs\OleDownloadManager without administrator rights.
+  - Registers the native messaging host for Chrome, Edge and Firefox under HKCU (optional feature).
+  - Uninstall removes program files, shortcuts and registry entries it created. It never deletes the
+    user's download history (%LOCALAPPDATA%\OleDownloadManager) or downloaded files.
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:ui="http://wixtoolset.org/schemas/v4/wxs/ui">
+  <Package Name="OleDownloadManager"
+           Manufacturer="OleDownloadManager"
+           Version="$(ProductVersion)"
+           UpgradeCode="F7FDD237-1790-4896-B0CC-12449AA8E0D5"
+           Scope="perUser"
+           Compressed="yes"
+           Language="1033">
+    <SummaryInformation Description="OleDownloadManager Setup" Manufacturer="OleDownloadManager" />
+    <MajorUpgrade AllowSameVersionUpgrades="yes"
+                  DowngradeErrorMessage="A newer version of OleDownloadManager is already installed." />
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <Icon Id="AppIcon.ico" SourceFile="..\src\OleDownloadManager.App\Assets\app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="AppIcon.ico" />
+    <Property Id="ARPCOMMENTS" Value="Download manager for Windows. Your download history is kept after uninstalling." />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="UserProgramsFolder" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="OleDownloadManager" />
+      </Directory>
+    </StandardDirectory>
+
+    <Feature Id="Main" Title="OleDownloadManager" Description="The OleDownloadManager application." Level="1" AllowAbsent="no" Display="expand">
+      <ComponentGroupRef Id="ApplicationFiles" />
+      <ComponentRef Id="StartMenuShortcut" />
+      <ComponentRef Id="InstallState" />
+
+      <Feature Id="BrowserIntegration" Title="Browser integration"
+               Description="Lets the OleDownloadManager extensions for Chrome, Edge and Firefox send downloads to the app. Registers a native messaging host for the current user only."
+               Level="1">
+        <ComponentRef Id="NativeMessagingRegistration" />
+      </Feature>
+
+      <Feature Id="DesktopShortcutFeature" Title="Desktop shortcut" Description="Adds an OleDownloadManager shortcut to the desktop." Level="1000">
+        <ComponentRef Id="DesktopShortcut" />
+      </Feature>
+    </Feature>
+
+    <ComponentGroup Id="ApplicationFiles" Directory="INSTALLFOLDER">
+      <Files Include="$(PublishDir)\**" />
+    </ComponentGroup>
+
+    <Component Id="StartMenuShortcut" Directory="ProgramMenuFolder" Guid="5C0E3E2C-0D1B-4F3B-9E47-7B7E2A1B6C01">
+      <Shortcut Id="StartMenuShortcutLink" Name="OleDownloadManager" Description="Download manager"
+                Target="[INSTALLFOLDER]OleDownloadManager.exe" WorkingDirectory="INSTALLFOLDER" />
+      <RegistryValue Root="HKCU" Key="Software\OleDownloadManager\Installer" Name="StartMenuShortcut" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <Component Id="DesktopShortcut" Directory="DesktopFolder" Guid="5C0E3E2C-0D1B-4F3B-9E47-7B7E2A1B6C02">
+      <Shortcut Id="DesktopShortcutLink" Name="OleDownloadManager" Description="Download manager"
+                Target="[INSTALLFOLDER]OleDownloadManager.exe" WorkingDirectory="INSTALLFOLDER" />
+      <RegistryValue Root="HKCU" Key="Software\OleDownloadManager\Installer" Name="DesktopShortcut" Type="integer" Value="1" KeyPath="yes" />
+    </Component>
+
+    <!-- Manifests sit in INSTALLFOLDER and reference the host with a path relative to themselves. -->
+    <Component Id="NativeMessagingRegistration" Directory="INSTALLFOLDER" Guid="5C0E3E2C-0D1B-4F3B-9E47-7B7E2A1B6C03">
+      <RegistryValue Root="HKCU" Key="Software\Google\Chrome\NativeMessagingHosts\com.oledm.downloadmanager"
+                     Type="string" Value="[INSTALLFOLDER]com.oledm.downloadmanager.chrome.json" KeyPath="yes" />
+      <RegistryValue Root="HKCU" Key="Software\Microsoft\Edge\NativeMessagingHosts\com.oledm.downloadmanager"
+                     Type="string" Value="[INSTALLFOLDER]com.oledm.downloadmanager.chrome.json" />
+      <RegistryValue Root="HKCU" Key="Software\Mozilla\NativeMessagingHosts\com.oledm.downloadmanager"
+                     Type="string" Value="[INSTALLFOLDER]com.oledm.downloadmanager.firefox.json" />
+    </Component>
+
+    <Component Id="InstallState" Directory="INSTALLFOLDER" Guid="5C0E3E2C-0D1B-4F3B-9E47-7B7E2A1B6C04">
+      <RegistryValue Root="HKCU" Key="Software\OleDownloadManager\Installer" Name="InstallFolder" Type="string" Value="[INSTALLFOLDER]" KeyPath="yes" />
+      <!-- The optional launch-at-sign-in shortcut is created by the app; remove it with the app. -->
+      <RemoveFile Id="RemoveStartupShortcut" Directory="StartupFolder" Name="OleDownloadManager.lnk" On="uninstall" />
+      <RemoveFolder Id="RemoveInstallFolder" Directory="INSTALLFOLDER" On="uninstall" />
+      <RemoveRegistryKey Root="HKCU" Key="Software\OleDownloadManager\Installer" Action="removeOnUninstall" />
+    </Component>
+
+    <ui:WixUI Id="WixUI_FeatureTree" />
+    <WixVariable Id="WixUILicenseRtf" Value="License.rtf" />
+  </Package>
+</Wix>

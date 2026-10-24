@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>OleDownloadManager</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header>
+    <img src="icons/icon32.png" alt="" width="20" height="20">
+    <h1>OleDownloadManager</h1>
+  </header>
+
+  <section class="status" id="status" aria-live="polite">
+    <span class="dot" id="dot"></span>
+    <span id="statusText">Checking connection…</span>
+  </section>
+
+  <label class="row">
+    <input type="checkbox" id="capture">
+    <span>Capture downloads of these file types</span>
+  </label>
+  <textarea id="extensions" rows="3" spellcheck="false" aria-label="File types to capture"></textarea>
+  <p class="hint">Other downloads stay in the browser. Right-click any link and choose <em>Download with OleDownloadManager</em> to send it manually.</p>
+
+  <footer>
+    <button id="save">Save</button>
+    <span id="saved" class="hint"></span>
+  </footer>
+  <script src="popup.js"></script>
+</body>
+</html>

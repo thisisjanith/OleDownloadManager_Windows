@@ -1,0 +1,9 @@
+bin/
+obj/
+artifacts/
+TestResults/
+*.user
+.vs/
+*.suo
+*.pem
+*.pfx
