@@ -96,7 +96,7 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <TextBox Text="{Binding Destination, UpdateSourceTrigger=PropertyChanged}" />
+                    <TextBox Text="{Binding Destination, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="MediaDestinationBox" AutomationProperties.Name="Save to" />
                     <Button Grid.Column="1" Content="…" MinWidth="32" Command="{Binding BrowseCommand}" Margin="6,0,0,0" />
                 </Grid>
             </StackPanel>

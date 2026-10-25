@@ -61,8 +61,12 @@ The app makes no claim that downloaded content is safe. It never executes downlo
 - The extension does not read page content, cookies or history. It sees only links the user sends and downloads the
   browser starts (capture is limited to listed file types and can be turned off). Captured browser downloads are
   paused first and only canceled after the app accepted them.
-- Forwarding browser cookies or session tokens for authenticated downloads is **not implemented** by design; any
-  future feature must be explicit, limited in scope and separately reviewed.
+- OleDownloadManager never reads browser cookies or session tokens, and the extension never forwards them.
+  The one exception is opt-in and limited to the media tool: under *Settings → Media → Sign-in for media sites* the
+  user may let **yt-dlp** use a browser's sign-in (`--cookies-from-browser <browser>`) or a `cookies.txt` file
+  (`--cookies`) when a site such as YouTube demands it. It is off by default, applies only to media downloads the
+  user starts, only known browser names are accepted (no arbitrary arguments), and nothing is stored by the app.
+  yt-dlp may update a cookies.txt file it is given.
 
 ### Privileges and execution
 - The app and installer run without administrator rights (`asInvoker` manifest, per-user MSI).

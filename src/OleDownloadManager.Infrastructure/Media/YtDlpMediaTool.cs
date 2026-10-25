@@ -236,11 +236,13 @@ public sealed class YtDlpMediaTool : IMediaTool
             ? MediaFormats.Standard
             : [new("Best available (single file)", MediaFormats.BestSingleFile, null, false), new("Audio only (original format)", MediaFormats.AudioOriginal, null, true)];
 
-    private sealed record FormatInfo(int? Height, bool HasVideo, bool HasAudio, long? Size, double Bitrate);
+    private sealed record FormatInfo(int? Height, bool HasVideo, bool HasAudio, long? Size, bool SizeKnown, double Bitrate,
+        bool IsH264, bool IsAac, bool IsStreamingPlaylist, int? Channels, bool IsDrc);
 
     /// <summary>
     /// Builds the quality list from the formats a single video really offers: one entry per resolution
-    /// (best first) with an approximate size, then audio-only options.
+    /// (best first) with an approximate size, then audio-only options. Size estimates follow the same
+    /// preferences the download uses (H.264 and stereo AAC, direct HTTPS over HLS).
     /// </summary>
     internal static IReadOnlyList<MediaQuality> ParseQualities(JsonElement root, bool ffmpegAvailable)
     {
@@ -269,22 +271,43 @@ public sealed class YtDlpMediaTool : IMediaTool
             }
 
             var bitrate = GetDouble(f, "tbr") ?? 0;
-            var size = GetLong(f, "filesize") ?? GetLong(f, "filesize_approx") ??
-                       (bitrate > 0 && duration is > 0 ? (long)(bitrate * 1000 / 8 * duration.Value) : null);
-            formats.Add(new FormatInfo(hasVideo ? height : null, hasVideo, hasAudio, size, bitrate));
+            var known = GetLong(f, "filesize") ?? GetLong(f, "filesize_approx");
+            var size = known ?? (bitrate > 0 && duration is > 0 ? (long)(bitrate * 1000 / 8 * duration.Value) : null);
+            formats.Add(new FormatInfo(
+                hasVideo ? height : null, hasVideo, hasAudio, size, known is not null, bitrate,
+                IsH264: vcodec?.StartsWith("avc1", StringComparison.OrdinalIgnoreCase) == true,
+                IsAac: acodec?.StartsWith("mp4a", StringComparison.OrdinalIgnoreCase) == true,
+                IsStreamingPlaylist: GetString(f, "protocol")?.StartsWith("m3u8", StringComparison.OrdinalIgnoreCase) == true,
+                Channels: GetInt(f, "audio_channels"),
+                IsDrc: GetString(f, "format_id")?.Contains("drc", StringComparison.OrdinalIgnoreCase) == true));
         }
 
-        var bestAudio = formats.Where(f => f.HasAudio && !f.HasVideo).OrderByDescending(f => f.Bitrate).FirstOrDefault();
+        var audioOnly = formats.Where(f => f.HasAudio && !f.HasVideo).ToList();
+        // The audio track merged with video: stereo AAC when available, as the download prefers.
+        var mergeAudio = audioOnly
+            .OrderByDescending(f => f.IsAac)
+            .ThenByDescending(f => f.Channels is null or <= 2)
+            .ThenBy(f => f.IsDrc)
+            .ThenByDescending(f => f.SizeKnown)
+            .ThenByDescending(f => f.Bitrate)
+            .FirstOrDefault();
+        var bestAudio = audioOnly.Where(f => !f.IsDrc).OrderByDescending(f => f.Bitrate).FirstOrDefault() ?? mergeAudio;
+
         var result = new List<MediaQuality>();
         var heights = formats.Where(f => f.HasVideo && f.Height is > 0).Select(f => f.Height!.Value).Distinct().OrderDescending();
         foreach (var height in heights)
         {
             var atHeight = formats.Where(f => f.HasVideo && f.Height == height).ToList();
             var combined = atHeight.Where(f => f.HasAudio).OrderByDescending(f => f.Bitrate).FirstOrDefault();
-            var videoOnly = atHeight.Where(f => !f.HasAudio).OrderByDescending(f => f.Bitrate).FirstOrDefault();
-            if (ffmpegAvailable && videoOnly is not null && (combined is null || videoOnly.Bitrate > combined.Bitrate))
+            var videoOnly = atHeight.Where(f => !f.HasAudio)
+                .OrderByDescending(f => f.IsH264)
+                .ThenBy(f => f.IsStreamingPlaylist)
+                .ThenByDescending(f => f.SizeKnown)
+                .ThenByDescending(f => f.Bitrate)
+                .FirstOrDefault();
+            if (ffmpegAvailable && videoOnly is not null)
             {
-                var size = videoOnly.Size is { } v ? v + (bestAudio?.Size ?? 0) : (long?)null;
+                var size = videoOnly.Size is { } v ? v + (mergeAudio?.Size ?? 0) : (long?)null;
                 result.Add(new MediaQuality(MediaFormats.HeightLabel(height), MediaFormats.UpTo(height), size, false));
             }
             else if (combined is not null)
@@ -299,7 +322,9 @@ public sealed class YtDlpMediaTool : IMediaTool
             result.Add(new MediaQuality("Audio only (original format)", MediaFormats.AudioOriginal, bestAudio?.Size, true));
             if (ffmpegAvailable)
             {
-                result.Add(new MediaQuality("Audio only (MP3)", MediaFormats.AudioMp3, bestAudio?.Size, true));
+                // MP3 at the highest VBR quality averages roughly 245 kbit/s.
+                long? mp3 = duration is > 0 ? (long)(245_000 / 8 * duration.Value) : null;
+                result.Add(new MediaQuality("Audio only (MP3)", MediaFormats.AudioMp3, mp3, true));
             }
         }
 
@@ -328,8 +353,9 @@ public sealed class YtDlpMediaTool : IMediaTool
             args.AddRange(["-f", format]);
             if (format.Contains('+', StringComparison.Ordinal))
             {
-                // Merged video+audio goes into an MP4 container, which plays everywhere on Windows.
-                args.AddRange(["--merge-output-format", "mp4"]);
+                // Highest allowed resolution first, then prefer H.264/AAC so the MP4 plays in every Windows player
+                // (YouTube offers only VP9/AV1 above 1080p).
+                args.AddRange(["--format-sort", "res,vcodec:h264,acodec:m4a", "--merge-output-format", "mp4"]);
             }
         }
 

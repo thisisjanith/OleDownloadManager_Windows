@@ -40,7 +40,7 @@ The test projects use xUnit v3 on Microsoft.Testing.Platform (`global.json` opts
 | Persistence | Migrations (fresh, from v1, refusing newer schema), round trip incl. dates/offsets/validators/headers, durable-bytes-only persistence, segment replacement, concurrent saves, delete cascade, settings round trip |
 | File system | Conflict policies, reserved names, traversal-safe combine, MAX_PATH fitting, writability/free space, disk-full and missing-drive detection, disk-space margin, guarded temp deletion, no-overwrite finalization, Mark-of-the-Web |
 | Browser protocol | Message validation (types, version, request IDs, URLs, sizes, nesting), framing edge cases, pipe round trip, manifests without wildcards |
-| Media tool | Playlist/single-video parsing, unsafe entry URLs dropped, multi-stream progress accumulation |
+| Media tool | Playlist/single-video parsing, unsafe entry URLs dropped, multi-stream progress accumulation; video-page detection (YouTube watch/youtu.be/Shorts/playlists, Vimeo, Dailymotion…); real quality lists from YouTube-style split streams and archive.org-style single files, with and without ffmpeg; size estimates checked against a real YouTube format list (fixture) and the size of the actual download; exact yt-dlp command lines (MP4 merge with H.264/AAC preference, MP3, rate limit, sign-in options); bot-check and HTTP 403 guidance |
 | Launch at sign-in | Shortcut creation (temporary folder) |
 | Logging | URL redaction and free-text secret scrubbing |
 
@@ -66,7 +66,8 @@ Real coordinator + engine + SQLite + file system against the local test server:
 - Unavailable destination drive (simulated with `subst`): *Waiting for Destination*, notification, automatic resume
 - Failed state consistent after reload; sensitive headers absent from the database file (incl. WAL)
 - Native messaging host executable: forwarding, multiple messages, app not running, invalid messages, unknown callers, Firefox arguments, oversized frames
-- yt-dlp integration (skipped if yt-dlp is not installed): inspection, progress, output path, completion through the coordinator
+- yt-dlp integration (skipped if yt-dlp is not installed): inspection, progress, output path, completion through the coordinator;
+  opt-in `UpdatesTheInstalledTool` (runs only with `OLEDM_ALLOW_TOOL_UPDATE=1`, because it really updates yt-dlp)
 - 512 MiB download: memory growth stays bounded (measured: 9 MiB growth, ~350 MiB/s locally)
 
 ### UI tests (`tests/OleDownloadManager.UITests`)
@@ -74,7 +75,9 @@ Real coordinator + engine + SQLite + file system against the local test server:
 - **View-model scenarios** (on an STA dispatcher thread, real engine): add URL with probe (name, size, category),
   invalid URLs, changing the destination, pause/resume via commands and the Space toggle, cancel with
   confirmation, retry, search and sidebar filtering, open file / reveal / copy path via the shell service, trash and
-  empty trash, paste from clipboard, sorting, saving and validating settings, history restored after restart.
+  empty trash, paste from clipboard, sorting, saving and validating settings, history restored after restart;
+  a pasted YouTube link opens the video quality picker instead of downloading the page, the Add dialog redirects
+  video pages, and the video dialog lists a video's qualities and queues the chosen one.
 - **Real application** via Windows UI Automation: launch with a URL, confirm the Add Download dialog, file
   downloaded and listed, search filters the real list, window closed and app relaunched with history restored;
   second instance hands its URL to the running instance.
@@ -91,9 +94,9 @@ created for the run and restored afterwards (`--installed` uses the MSI's regist
 
 | Suite | Result |
 |---|---|
-| Unit | 239 passed |
-| Integration | 53 passed (yt-dlp 2026.07.04 installed, so media tests ran) |
-| UI | 16 passed |
+| Unit | 268 passed |
+| Integration | 54 passed (yt-dlp 2026.10.21 installed, so media tests ran; the opt-in tool-update test is skipped unless enabled) |
+| UI | 19 passed |
 | Browser E2E | Chrome 155: pass · Edge 155: pass · installed MSI build with Chrome: pass |
 | Firefox | not run (Firefox not installed) |
 

@@ -105,6 +105,22 @@ public sealed class MediaToolTests : IAsyncLifetime
         }
     }
 
+    /// <summary>
+    /// Really updates the installed yt-dlp (winget or yt-dlp -U), so it only runs when OLEDM_ALLOW_TOOL_UPDATE=1.
+    /// </summary>
+    [Fact]
+    public async Task UpdatesTheInstalledTool()
+    {
+        Assert.SkipUnless(Environment.GetEnvironmentVariable("OLEDM_ALLOW_TOOL_UPDATE") == "1", "Set OLEDM_ALLOW_TOOL_UPDATE=1 to run.");
+        await RequireToolAsync();
+
+        var status = await _tool.UpdateAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(status.IsAvailable, status.Message);
+        Assert.Matches("(was updated|already up to date)", status.Message);
+        TestContext.Current.TestOutputHelper?.WriteLine($"{status.Message} {status.Version}");
+    }
+
     private sealed class SyncProgress(Action<MediaProgress> action) : IProgress<MediaProgress>
     {
         public void Report(MediaProgress value) => action(value);

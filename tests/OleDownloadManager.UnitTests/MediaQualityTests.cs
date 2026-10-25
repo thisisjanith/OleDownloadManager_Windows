@@ -43,6 +43,7 @@ public sealed class MediaQualityTests
           {"format_id":"251","ext":"webm","vcodec":"none","acodec":"opus","tbr":135.0,"filesize":1700000},
           {"format_id":"18","ext":"mp4","vcodec":"avc1.42001E","acodec":"mp4a.40.2","height":360,"tbr":500,"filesize_approx":6000000},
           {"format_id":"134","ext":"mp4","vcodec":"avc1.4d401e","acodec":"none","height":360,"tbr":600,"filesize":7000000},
+          {"format_id":"230","ext":"mp4","protocol":"m3u8_native","vcodec":"avc1.4d401e","acodec":"none","height":360,"tbr":813},
           {"format_id":"136","ext":"mp4","vcodec":"avc1.4d401f","acodec":"none","height":720,"tbr":2000,"filesize":25000000},
           {"format_id":"137","ext":"mp4","vcodec":"avc1.640028","acodec":"none","height":1080,"tbr":4000},
           {"format_id":"401","ext":"mp4","vcodec":"av01.0.12M.08","acodec":"none","height":2160,"tbr":15000,"filesize":190000000}
@@ -60,11 +61,30 @@ public sealed class MediaQualityTests
             ["2160p (4K)", "1080p (Full HD)", "720p (HD)", "360p", "Audio only (original format)", "Audio only (MP3)"],
             result.Qualities.Select(q => q.Label));
         Assert.Equal(MediaFormats.UpTo(1080), result.Qualities[1].Selector);
-        Assert.Equal(190_000_000 + 1_700_000, result.Qualities[0].ApproximateBytes);
+        // Video plus the stereo AAC track (format 140) that the H.264/AAC preference merges.
+        Assert.Equal(190_000_000 + 1_600_000, result.Qualities[0].ApproximateBytes);
 
         // No size reported for 1080p: estimated from bitrate x duration (4000 kbit/s * 100 s) plus best audio.
-        Assert.Equal(50_000_000 + 1_700_000, result.Qualities[1].ApproximateBytes);
+        Assert.Equal(50_000_000 + 1_600_000, result.Qualities[1].ApproximateBytes);
+
+        // 360p: the direct HTTPS H.264 stream, not the HLS one.
+        Assert.Equal(7_000_000 + 1_600_000, result.Qualities[3].ApproximateBytes);
+        Assert.Equal(1_700_000, result.Qualities[4].ApproximateBytes);
+        Assert.Equal(245_000 / 8 * 100, result.Qualities[5].ApproximateBytes);
         Assert.True(result.Qualities[^1].AudioOnly);
+    }
+
+    [Fact]
+    public void EstimatesMatchARealYouTubeDownload()
+    {
+        // Real yt-dlp 2026.10.21 format list for Big Buck Bunny (Blender Foundation, CC BY). Downloading it at
+        // 360p with the app's arguments produced 28,565,606 bytes (H.264 format 134 + AAC format 140).
+        var json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", "youtube-bbb-formats.json"));
+        var result = YtDlpMediaTool.ParseInspection(json, YouTube, ffmpegAvailable: true);
+
+        Assert.Equal([2160, 1440, 1080, 720, 480, 360, 240, 144],
+            result.Qualities.Where(q => !q.AudioOnly).Select(q => int.Parse(q.Label.Split('p')[0], System.Globalization.CultureInfo.InvariantCulture)));
+        Assert.Equal(18_294_110 + 10_271_496, result.Qualities.Single(q => q.Label == "360p").ApproximateBytes);
     }
 
     [Fact]
@@ -110,6 +130,7 @@ public sealed class MediaQualityTests
 
         Assert.Equal(MediaFormats.UpTo(1080), args[args.IndexOf("-f") + 1]);
         Assert.Equal("mp4", args[args.IndexOf("--merge-output-format") + 1]);
+        Assert.Equal("res,vcodec:h264,acodec:m4a", args[args.IndexOf("--format-sort") + 1]);
         Assert.Equal("500000", args[args.IndexOf("--limit-rate") + 1]);
         Assert.True(args.IndexOf("--cookies-from-browser") < args.IndexOf("--"));
         Assert.Equal(YouTube.AbsoluteUri, args[^1]);

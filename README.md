@@ -47,8 +47,10 @@ Built with C# / .NET 10 (LTS) and WPF. The release is self-contained — users d
   and schema validation.
 - **Installer**: per-user MSI (no administrator rights), Start Menu shortcut, optional desktop shortcut, browser
   integration feature, clean uninstall that keeps the user's history and downloaded files.
-- **Media and playlists (optional)**: lists the items of a page or playlist through a user-installed
-  [yt-dlp](https://github.com/yt-dlp/yt-dlp) and adds selected items as normal downloads (see below).
+- **Videos and playlists (YouTube etc.)**: video links open a dialog that lists the resolutions the video really
+  has, with sizes, via a user-installed [yt-dlp](https://github.com/yt-dlp/yt-dlp); selected items become normal
+  downloads (see below). Verified with a real YouTube download (360p, H.264/AAC MP4). Whether YouTube allows a
+  download without a sign-in depends on your network; the optional sign-in setting covers that.
 
 ### Partially implemented / limitations
 
@@ -63,15 +65,30 @@ Built with C# / .NET 10 (LTS) and WPF. The release is self-contained — users d
 ### Not implemented (planned)
 
 Per-host connection limits, import/export, bandwidth schedules, floating progress window, compact mode, completion
-sound, store-published extensions, authenticated-browser (cookie) hand-off — the last one deliberately, see
-`docs/SECURITY.md`.
+sound, store-published extensions. Handing browser cookies to ordinary (non-media) downloads is deliberately not
+implemented; the only sign-in option is the opt-in one for yt-dlp described in `docs/SECURITY.md`.
 
-## Media and playlists (yt-dlp)
+## Videos and playlists (YouTube and other sites, via yt-dlp)
 
-The **Media** button (Ctrl+M) lists the entries of a playlist or media page using **yt-dlp, which you install
-separately** (for example `winget install yt-dlp.yt-dlp`; merging best video+audio also needs ffmpeg).
-OleDownloadManager contains no site-specific extraction code; it launches yt-dlp with your user configuration
-ignored, shows its progress, and finalizes the file like any other download.
+Paste, drop or type a video link (for example a YouTube `watch`, `youtu.be`, Shorts or playlist link) and
+OleDownloadManager opens the **Download Video or Playlist** dialog instead of saving the web page. It reads the page and
+lists the **resolutions that video actually has** (e.g. 2160p, 1440p, 1080p, 720p … 144p) with approximate sizes, plus
+*Audio only* and *Audio only (MP3)*. Pick one and choose **Download Now** or **Add to Queue**; each video becomes a normal
+download in the list. Playlists list every item; select the ones you want and a maximum quality. The dialog is also
+available from the **Media** button (Ctrl+M), and links sent from the browser extension are routed the same way.
+
+- Requires **yt-dlp**, installed separately (`winget install yt-dlp.yt-dlp`). HD/4K and MP3 also need **ffmpeg**
+  (`winget install Gyan.FFmpeg`); without it only single-file qualities are offered.
+- Video is saved as MP4, preferring H.264 + AAC so it plays in every Windows player (YouTube offers only VP9/AV1 above
+  1080p, so 1440p/4K files use those codecs).
+- Sites such as YouTube change often and older yt-dlp versions stop working (typically *HTTP 403*). Use
+  **Settings → Media → Update yt-dlp**, or the *Update yt-dlp* button shown next to such errors.
+- If a site asks to *confirm you're not a bot*, you can opt in under **Settings → Media → Sign-in for media sites** to let
+  yt-dlp use your sign-in from a browser (Firefox is most reliable) or a `cookies.txt` file. It is off by default;
+  yt-dlp reads it only for media downloads you start, and OleDownloadManager never reads or stores it.
+
+OleDownloadManager contains no site-specific extraction code; it launches yt-dlp with your user configuration ignored,
+shows its progress, and finalizes the file like any other download.
 
 Only download media you have the right to save — your own uploads, content whose licence permits downloading, or
 content you have permission to download. Many sites' terms of service restrict downloading. DRM-protected media is
@@ -143,6 +160,9 @@ erase history.
 | "Waiting for Destination" | The target drive or network share is unavailable. Reconnect it; the download continues automatically. |
 | Only one connection is used | The server did not confirm range support, the file is small (< 2 MiB), or the server throttled parallel requests. |
 | Media button says yt-dlp not found | Install yt-dlp or set its path in Settings → Media. |
+| A YouTube link saved a `watch.html` file | Fixed: video links now open the video dialog. Remove the old entry and add the link again. |
+| Video download fails with HTTP 403 | Update yt-dlp (Settings → Media → Update yt-dlp). |
+| "Confirm you're not a bot" | Opt in to a browser sign-in or cookies.txt under Settings → Media. |
 
 ## Documentation
 
