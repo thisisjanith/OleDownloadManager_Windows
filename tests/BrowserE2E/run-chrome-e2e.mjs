@@ -165,34 +165,50 @@ try {
   log("app pid", app.pid);
   await sleep(3000);
 
-  const browserArgs = [
-    `--user-data-dir=${profileDir}`, "--remote-debugging-pipe", "--enable-unsafe-extension-debugging",
-    "--no-first-run", "--no-default-browser-check", "--disable-sync", "--disable-search-engine-choice-screen",
-  ];
-  if (!headed) browserArgs.push("--headless=new");
-  browserArgs.push("about:blank");
-  chrome = spawn(browserPath, browserArgs, { env, stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] });
-  const cdp = new Cdp(chrome);
+  // Starts the browser on the test profile, loads the extension and attaches to its service worker.
+  // Called twice: the second start reuses the profile, so the browser's download history is non-empty.
+  let cdp;
+  let evaluate;
+  let extensionId;
+  const startBrowser = async () => {
+    const browserArgs = [
+      `--user-data-dir=${profileDir}`, "--remote-debugging-pipe", "--enable-unsafe-extension-debugging",
+      "--no-first-run", "--no-default-browser-check", "--disable-sync", "--disable-search-engine-choice-screen",
+    ];
+    if (!headed) browserArgs.push("--headless=new");
+    browserArgs.push("about:blank");
+    chrome = spawn(browserPath, browserArgs, { env, stdio: ["ignore", "ignore", "ignore", "pipe", "pipe"] });
+    cdp = new Cdp(chrome);
 
-  const { id: extensionId } = await cdp.send("Extensions.loadUnpacked", { path: extensionDir });
-  log("extension loaded", extensionId);
-  assert.equal(extensionId, expectedExtensionId, "extension ID must match the key in manifest.json");
+    ({ id: extensionId } = await cdp.send("Extensions.loadUnpacked", { path: extensionDir }));
+    log("extension loaded", extensionId);
+    assert.equal(extensionId, expectedExtensionId, "extension ID must match the key in manifest.json");
+    await cdp.send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: browserDownloads, eventsEnabled: true });
 
-  await cdp.send("Browser.setDownloadBehavior", { behavior: "allow", downloadPath: browserDownloads, eventsEnabled: true });
-
-  const worker = await waitFor(async () => {
-    const { targetInfos } = await cdp.send("Target.getTargets");
-    return targetInfos.find((t) => t.type === "service_worker" && t.url.startsWith(`chrome-extension://${extensionId}/`));
-  }, 20000, "extension service worker");
-  const { sessionId } = await cdp.send("Target.attachToTarget", { targetId: worker.targetId, flatten: true });
-  const evaluate = async (expression) => {
-    const result = await cdp.send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true }, sessionId);
-    if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
-    return result.result.value;
+    const worker = await waitFor(async () => {
+      const { targetInfos } = await cdp.send("Target.getTargets");
+      return targetInfos.find((t) => t.type === "service_worker" && t.url.startsWith(`chrome-extension://${extensionId}/`));
+    }, 20000, "extension service worker");
+    const { sessionId } = await cdp.send("Target.attachToTarget", { targetId: worker.targetId, flatten: true });
+    evaluate = async (expression) => {
+      const result = await cdp.send("Runtime.evaluate", { expression, awaitPromise: true, returnByValue: true }, sessionId);
+      if (result.exceptionDetails) throw new Error(JSON.stringify(result.exceptionDetails));
+      return result.result.value;
+    };
   };
+  const stopBrowser = async () => {
+    const exited = new Promise((resolve) => chrome.once("exit", resolve));
+    try { await cdp.send("Browser.close"); } catch { /* pipe closes as the browser exits */ }
+    await Promise.race([exited, sleep(15000)]);
+  };
+  await startBrowser();
 
   // 1. Connection status through native messaging.
-  const status = await evaluate("oledm.getConnectionStatus()");
+  // The app may still be starting; wait until it answers through the native host.
+  const status = await waitFor(async () => {
+    const s = await evaluate("oledm.getConnectionStatus()");
+    return s.state === "connected" ? s : null;
+  }, 30000, "the app to answer through native messaging").catch(async () => evaluate("oledm.getConnectionStatus()"));
   log("status", JSON.stringify(status));
   assert.equal(status.state, "connected");
 
@@ -200,6 +216,11 @@ try {
   const accepted = await evaluate(`oledm.handleContextClick({ linkUrl: "${base}/files/150000/report.pdf", pageUrl: "${base}/page" })`);
   log("context menu result", JSON.stringify(accepted));
   assert.equal(accepted.accepted, true);
+
+  // 3. Sending the same link again right away is ignored by the extension (5-second window).
+  const duplicate = await evaluate(`oledm.sendDownload("${base}/files/150000/report.pdf")`);
+  assert.equal(duplicate.accepted, false);
+
 
   const uia = (action, id, value) => execFileSync("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", uiaScript,
     "-ProcessId", String(app.pid), "-Action", action, "-AutomationId", id, ...(value ? ["-Value", value] : [])], { encoding: "utf8" });
@@ -211,10 +232,6 @@ try {
   await waitFor(() => existsSync(join(downloadDir, "report.pdf")), 30000, "report.pdf");
   assert.deepEqual(readFileSync(join(downloadDir, "report.pdf")), content(150000));
   log("context-menu download verified");
-
-  // 3. Duplicate submissions within a few seconds are ignored by the extension.
-  const duplicate = await evaluate(`oledm.sendDownload("${base}/files/150000/report.pdf")`);
-  assert.equal(duplicate.accepted, false);
 
   // 4. Automatic capture of a browser download (paused, handed over, then canceled in the browser).
   await cdp.send("Target.createTarget", { url: `${base}/files/300000/setup.zip` });
@@ -233,10 +250,57 @@ try {
   const refused = await evaluate(`oledm.sendDownload("file:///C:/Windows/win.ini")`);
   assert.equal(refused.accepted, false);
 
+  // 6. The browser's download history must never be sent to the app. Chromium replays past downloads
+  //    through downloads.onCreated when it starts; those entries must be ignored.
+  const browserRequests = () => readdirSync(join(dataDir, "logs"))
+    .filter((f) => f.startsWith("oledm-"))
+    .map((f) => readFileSync(join(dataDir, "logs", f), "utf8").split("Browser requested download").length - 1)
+    .reduce((a, b) => a + b, 0);
+  await evaluate(`chrome.storage.local.set({ captureEnabled: false })`);
+  for (const name of ["history-a.zip", "history-b.iso", "history-c.pdf"]) {
+    await cdp.send("Target.createTarget", { url: `${base}/files/50000/${name}` });
+    await waitFor(() => existsSync(join(browserDownloads, name)), 30000, `browser download ${name}`);
+  }
+  await evaluate(`chrome.storage.local.set({ captureEnabled: true })`);
+  const before = browserRequests();
+  // Like a user installing (or reinstalling/updating) the extension into a browser that already has a
+  // download history: uninstall it, restart the browser, then load it fresh.
+  log("reinstalling the extension into a browser with 3 finished downloads in its history");
+  await cdp.send("Extensions.uninstall", { id: extensionId });
+  await stopBrowser();
+  await startBrowser();
+  // Chromium loads its download history lazily; touching the downloads API (as the downloads page or the
+  // download bubble does) makes it load, which is when onCreated fires for every past download.
+  await evaluate(`chrome.downloads.search({}).then((items) => items.length)`);
+  await sleep(8000);
+  const replayed = browserRequests() - before;
+  log("requests after restart", replayed);
+  assert.equal(replayed, 0, "restarting the browser must not resend its download history");
+
+  const checks = await evaluate(`(async () => {
+    const old = await chrome.downloads.search({ filenameRegex: "history-" });
+    return {
+      historyItems: old.length,
+      anyFresh: old.some((item) => oledm.isFreshDownload(item)),
+      brandNew: oledm.isFreshDownload({ state: "in_progress", startTime: new Date().toISOString() }),
+      daysOld: oledm.isFreshDownload({ state: "in_progress", startTime: new Date(Date.now() - 2 * 86400000).toISOString() }),
+    };
+  })()`);
+  log("history checks", JSON.stringify(checks));
+  assert.deepEqual(checks, { historyItems: 3, anyFresh: false, brandNew: true, daysOld: false });
+  log("browser download history is not captured");
+
   log("PASS");
 } catch (error) {
   failed = true;
   console.error("[e2e] FAIL", error);
+  // Show the app's and the native host's logs to make failures diagnosable (URLs in them are redacted).
+  try {
+    for (const file of readdirSync(join(dataDir, "logs"))) {
+      const lines = readFileSync(join(dataDir, "logs", file), "utf8").trim().split("\n");
+      console.error(`[e2e] --- ${file} (last 12 lines)\n` + lines.slice(-12).join("\n"));
+    }
+  } catch { /* no logs yet */ }
 } finally {
   try { chrome?.kill(); } catch { /* already gone */ }
   if (app) {

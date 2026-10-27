@@ -96,7 +96,7 @@ created for the run and restored afterwards (`--installed` uses the MSI's regist
 |---|---|
 | Unit | 268 passed |
 | Integration | 54 passed (yt-dlp 2026.10.21 installed, so media tests ran; the opt-in tool-update test is skipped unless enabled) |
-| UI | 19 passed |
+| UI | 21 passed |
 | Browser E2E | Chrome 155: pass · Edge 155: pass · installed MSI build with Chrome: pass |
 | Firefox | not run (Firefox not installed) |
 

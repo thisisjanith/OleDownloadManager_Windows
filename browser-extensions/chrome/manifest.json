@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "OleDownloadManager",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Send downloads to the OleDownloadManager desktop app for faster, resumable transfers.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAuCNQjs+HlBKdYpXSDKeo3rbkSZnh1LtEBnfAOFJdjysDQGcF4Q561Gbv+o2PlkxEi9IA+vKd6TAkMfi7LlkkxKBlMoCV3NLOkjEp/ETpJzKW++j/Ittt4PvlYrJy0pqNKGVpcNTm97YyIcSfQEGGdE30XlSkxT1FLjXYQtFCsdUSTvOJdr4dusE0rdTafvbzvtDZ9PMlP7WPhon3gwLA+JicAHem/VnED/9amXY6vOgTbeWhJvjI7Te6D4KqllMo8dtVmcjCM2b80PZvI4xTdDUVJ83waT3DeBK5KFqSkW06giqmXDcGikr98DI/2vTqLItt+ncTUUOwXacYirXnYwIDAQAB",
   "minimum_chrome_version": "116",

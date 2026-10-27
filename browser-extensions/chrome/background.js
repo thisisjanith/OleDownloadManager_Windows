@@ -111,7 +111,20 @@ function fileNameFromItem(item) {
   }
 }
 
+/** Only downloads the browser started moments ago count as new. */
+const MAX_CAPTURE_AGE_MS = 60 * 1000;
+
+function isFreshDownload(item, now = Date.now()) {
+  // The browser replays its download history through onCreated (at browser start and when the
+  // extension loads). Those entries are finished or old and must never be sent to the app.
+  if (item.state && item.state !== "in_progress") return false;
+  const started = Date.parse(item.startTime);
+  if (!Number.isFinite(started)) return false;
+  return now - started <= MAX_CAPTURE_AGE_MS && started - now <= MAX_CAPTURE_AGE_MS;
+}
+
 async function shouldCapture(item) {
+  if (!isFreshDownload(item)) return false;
   const settings = await getSettings();
   if (!settings.captureEnabled) return false;
   if (item.byExtensionId) return false;
@@ -182,4 +195,4 @@ api.runtime.onMessage.addListener((message, sender, sendResponse) => {
 });
 
 // Exposed for automated end-to-end tests run through the browser's DevTools protocol.
-globalThis.oledm = { sendDownload, getConnectionStatus, handleContextClick, shouldCapture };
+globalThis.oledm = { sendDownload, getConnectionStatus, handleContextClick, shouldCapture, isFreshDownload };

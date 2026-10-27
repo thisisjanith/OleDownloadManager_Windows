@@ -20,6 +20,17 @@ public sealed class BrowserRequestHandler
     private readonly HashSet<string> _pendingDialogs = new(StringComparer.Ordinal);
     private readonly object _lock = new();
 
+    /// <summary>Browser-sent dialogs are shown one at a time, never stacked.</summary>
+    private readonly SemaphoreSlim _dialogGate = new(1, 1);
+
+    /// <summary>Times of recently accepted browser requests, for the burst guard.</summary>
+    private readonly Queue<DateTime> _recentRequests = new();
+
+    /// <summary>More than this many links within <see cref="BurstWindow"/> is treated as a runaway sender.</summary>
+    public const int BurstLimit = 10;
+
+    public static readonly TimeSpan BurstWindow = TimeSpan.FromSeconds(10);
+
     public BrowserRequestHandler(IDownloadCoordinator coordinator, ISettingsStore settings, ILogger<BrowserRequestHandler> logger)
     {
         _coordinator = coordinator;
@@ -79,6 +90,12 @@ public sealed class BrowserRequestHandler
         var uri = new Uri(message.Url!);
         _logger.LogInformation("Browser requested download of {Url}", LogRedactor.Url(uri));
 
+        if (!TryAdmitBurst(DateTime.UtcNow))
+        {
+            _logger.LogWarning("Ignored a browser request: more than {Limit} links within {Window}", BurstLimit, BurstWindow);
+            return Rejected(message, "Too many downloads were sent at once, so the extra ones were ignored.");
+        }
+
         if (_coordinator.FindActiveDuplicate(uri) is { } duplicate)
         {
             return Rejected(message, $"Already in the download list ({duplicate.Status.ToDisplayString()}).");
@@ -120,8 +137,32 @@ public sealed class BrowserRequestHandler
         return reply;
     }
 
+    /// <summary>
+    /// Admits at most <see cref="BurstLimit"/> browser requests per <see cref="BurstWindow"/>. Protects against a
+    /// browser or extension flooding the app (for example by replaying its download history).
+    /// </summary>
+    internal bool TryAdmitBurst(DateTime now)
+    {
+        lock (_lock)
+        {
+            while (_recentRequests.Count > 0 && now - _recentRequests.Peek() > BurstWindow)
+            {
+                _recentRequests.Dequeue();
+            }
+
+            if (_recentRequests.Count >= BurstLimit)
+            {
+                return false;
+            }
+
+            _recentRequests.Enqueue(now);
+            return true;
+        }
+    }
+
     private async Task ShowDialogAsync(AddDownloadPrefill prefill)
     {
+        await _dialogGate.WaitAsync().ConfigureAwait(false);
         try
         {
             ActivateWindow?.Invoke();
@@ -136,6 +177,7 @@ public sealed class BrowserRequestHandler
         }
         finally
         {
+            _dialogGate.Release();
             if (prefill.Url is { } url)
             {
                 lock (_lock)

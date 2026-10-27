@@ -71,6 +71,10 @@ the script also writes `browserhost.allowed.json` next to the host so the host a
 - With **Capture downloads of these file types** enabled (popup; on by default for common archive, installer,
   disk-image, video, audio and PDF types), downloads the browser starts are paused, offered to the app, and canceled
   in the browser only after the app accepts them. If the app cannot be reached, the browser download resumes.
+  Only downloads that are in progress and started within the last minute are captured: Chrome replays its whole
+  download history to extensions (seen at browser start), and those past downloads are always ignored.
+- As a safety net the app accepts at most 10 links from the browser within 10 seconds and shows their dialogs one
+  at a time.
 - The app shows the Add Download dialog for browser downloads (Settings → Browser can switch to adding them
   directly). If the app is not running, the host starts it in the notification area.
 - The same link sent twice within five seconds is ignored; a link already in the list is rejected by the app.
